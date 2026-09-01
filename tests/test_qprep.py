@@ -27,6 +27,7 @@ path_qprep = path_main + "/Example_workflows/QPREP_generating_input_files"
         ("com_gen", "sdf_files", "com_files", False),  # test sdf inputs
         ("com_gen", "xyz_files", "com_files", False),  # test xyz inputs
         ("com_gen", "pdb_files", "com_files", False),  # test pdb inputs
+        ("cjson_gen", "json_files", "com_files", False),  # test cclib CJSON inputs
         (
             "charge_mult",
             "json_files",
@@ -191,6 +192,20 @@ def test_QPREP_analysis(test_type, init_folder, target_folder, restore_folder):
                 assert outlines[6].strip() == line_6
 
         
+
+    elif test_type == "cjson_gen":
+        qprep(destination=destination,
+              files=f"{w_dir_main}/CH4_orca6_cjson.json",
+              program="gaussian",
+              qm_input=qm_input)
+
+        outfile = open(f"{destination}/CH4_orca6_cjson.com", "r")
+        outlines = outfile.readlines()
+        outfile.close()
+
+        assert outlines[6].strip() == "0 1"
+        assert outlines[9].strip() == "C  -0.00037100   0.00001500   0.00006600"
+        assert outlines[10].strip() == "H   0.45703600  -0.46392100  -0.87651000"
 
     elif test_type == "charge_mult":
         if init_folder == "json_files":

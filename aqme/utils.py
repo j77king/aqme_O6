@@ -776,20 +776,50 @@ def cclib_atoms_coords(cclib_data, geom):
             - atom_types (list): Element symbols for each atom
             - cartesians (array): 3D coordinates for specified geometry
     """
-    atom_numbers = cclib_data["atomnos"]
+    # Legacy cclib JSON (__dict__) format
+    atom_numbers = cclib_data.get("atomnos")
+    cartesians_array = cclib_data.get("atomcoords")
+
+    # cclib master CJSON format (JSON output from ccwrite/ccwrite.py)
+    if atom_numbers is None:
+        atom_numbers = (
+            cclib_data.get("atoms", {})
+            .get("elements", {})
+            .get("number", [])
+        )
+    if cartesians_array is None:
+        cartesians_array = (
+            cclib_data.get("atoms", {})
+            .get("coords", {})
+            .get("3d", [])
+        )
+
     atom_types = []
     per_tab = periodic_table()
-    
     for atom_n in atom_numbers:
         if atom_n < len(per_tab):
             atom_symbol = per_tab[atom_n]
         else:
             atom_symbol = "XX"  # Unknown element
         atom_types.append(atom_symbol)
-    
-    cartesians_array = cclib_data["atomcoords"]
-    cartesians = cartesians_array[geom]
-    
+
+    cartesians = []
+    if len(cartesians_array) > 0:
+        # Legacy atomcoords format: [geom][atom][xyz]
+        if hasattr(cartesians_array[0], "__len__"):
+            first_level = cartesians_array[0]
+            # CJSON coords as [[x,y,z], ...]
+            if len(first_level) == 3 and isinstance(first_level[0], (int, float)):
+                cartesians = cartesians_array
+            else:
+                cartesians = cartesians_array[geom]
+        # CJSON coords as flattened [x1,y1,z1,x2,y2,z2,...]
+        elif isinstance(cartesians_array[0], (int, float)):
+            cartesians = [
+                cartesians_array[i:i + 3]
+                for i in range(0, len(cartesians_array), 3)
+            ]
+
     return atom_types, cartesians
 
 
