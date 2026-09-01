@@ -893,8 +893,20 @@ class qprep:
             with open(file) as f:
                 data = json.load(f)
             atom_types, cartesians = cclib_atoms_coords(data, -1)
-            charge = data['charge']
-            mult = data['mult']
+            if "charge" in data:
+                charge = data["charge"]
+            else:
+                charge = data.get("properties", {}).get("charge")
+
+            if "mult" in data:
+                mult = data["mult"]
+            else:
+                mult = data.get("properties", {}).get("multiplicity")
+
+            if charge is not None:
+                charge = int(charge)
+            if mult is not None:
+                mult = int(mult)
         except (AttributeError, KeyError, json.JSONDecodeError):
             return [], [], None, None
             
